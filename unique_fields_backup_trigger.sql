@@ -1,3 +1,5 @@
+create or replace database toy_recipes;
+
 use toy_recipes;
 
 create or replace table measure 
@@ -24,9 +26,9 @@ create or replace table overwritten
   time_created datetime(6),
   time_last_modified datetime(6),
   constraint fk_overwritten_measure
-      foreign_key (measure_id) references measure (measure_id)
-      on delete restrict
-      on update restrict
+      foreign key (measure_id) references measure (measure_id)
+      on delete cascade
+      on update cascade
 );
 
 delimiter //
@@ -40,13 +42,13 @@ for each row begin
 end;//
 delimiter ;
  
-insert into tinyints (a, b, c, x) values (1, 2, 3, 234.56);
+insert into measure (a, b, c, x) values (1, 2, 3, 234.56);
 
-insert into tinyints (a, b, c, x) values (1, 2, 3, 438.03)
+insert into measure (a, b, c, x) values (1, 2, 3, 438.03)
   on duplicate key update x = values(x);
-insert into tinyints (a, b, c, x) values (1, 2, 3, 1993.2)
+insert into measure (a, b, c, x) values (1, 2, 3, 1993.2)
   on duplicate key update x = values(x);
-insert into tinyints (a, b, c, x) values (1, 2, 4, 32.57)
+insert into measure (a, b, c, x) values (1, 2, 4, 32.57)
   on duplicate key update x = values(x);
 
 select * from measure;

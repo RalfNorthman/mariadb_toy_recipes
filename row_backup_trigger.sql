@@ -1,4 +1,4 @@
-use my_test;
+use toy_recipes;
 
 create or replace table tinyints 
 (

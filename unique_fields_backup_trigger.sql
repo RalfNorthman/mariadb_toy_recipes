@@ -1,4 +1,5 @@
-create or replace database toy_recipes;
+drop database if exists toy_recipes;
+create database toy_recipes;
 
 use toy_recipes;
 
@@ -9,8 +10,8 @@ create or replace table measure
   b tinyint unsigned not null,
   c tinyint unsigned not null,
   x double unsigned not null,
-  time_created datetime(6) default current_timestamp,
-  time_last_modified datetime(6) default current_timestamp
+  time_first_measurement datetime(6) default current_timestamp,
+  time_latest_measurement datetime(6) default current_timestamp
     on update current_timestamp,
   constraint unique_abc unique unique_abc_index (a, b, c)
 );
@@ -19,12 +20,9 @@ create or replace table overwritten
 (
   overwritten_id serial primary key,
   measure_id bigint unsigned,
-  a tinyint unsigned not null,
-  b tinyint unsigned not null,
-  c tinyint unsigned not null,
   x double unsigned not null,
-  time_created datetime(6),
-  time_last_modified datetime(6),
+  time_measurement datetime(6),
+  time_overwrite datetime(6),
   constraint fk_overwritten_measure
       foreign key (measure_id) references measure (measure_id)
       on delete cascade
@@ -35,8 +33,9 @@ delimiter //
 create or replace trigger measure_backup after update on measure
 for each row begin  
     insert into overwritten 
-      (measure_id, a, b, c, x, time_created, time_last_modified)
-    select measure_id, a, b, c, old.x, time_created, old.time_last_modified
+      (measure_id, x, time_measurement, time_overwrite)
+    select measure_id, old.x, 
+      old.time_latest_measurement, new.time_latest_measurement
     from measure 
     where measure_id = old.measure_id;
 end;//

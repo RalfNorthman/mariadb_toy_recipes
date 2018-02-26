@@ -6,7 +6,7 @@ use toy_recipes;
 create or replace table geometry
 (
   geometry_id serial primary key,
-  name varchar(127),
+  name varchar(127) not null,
   creation_time datetime default current_timestamp
 );
 
@@ -22,21 +22,32 @@ create or replace table points
       foreign key (geometry_id) 
       references geometry (geometry_id)
       on delete restrict
-      on update restrict
+      on update restrict,
+  constraint unique_coordinates 
+      unique unique_coords_index (geometry_id, x, y),
+  constraint unique_point_nrs 
+      unique unique_nrs_index (geometry_id, point_nr)
 );
 
 create or replace table optical
 (
   optical_id serial primary key,
-  a tinyint unsigned not null,
-  b tinyint unsigned not null,
-  c tinyint unsigned not null,
-  creation_time datetime default current_timestamp
+  wavelength smallint unsigned not null,
+  diffraction_order tinyint not null,
+  deviation tinyint unsigned not null,
+  polarisation enum('TE', 'TM') not null,
+  creation_time datetime default current_timestamp,
+  constraint unique_optical_properties 
+      unique unique_optical_properties_index
+      (wavelength, diffraction_order, deviation, polarisation),
+  constraint check_diff_order
+      check (diffraction_order between -3 and 3)
 );
 
 create or replace table measure 
 (
   measure_id serial primary key,
+  grating_nr mediumint unsigned,
   optical_id bigint unsigned,
   geometry_id bigint unsigned,
   efficiency double unsigned not null,
@@ -54,11 +65,22 @@ create or replace table measure
 );
  
 /*
-insert into measure (a, b, c, x) 
-  values (1, 2, 3, 234.56),
-         (1, 2, 4, 32.57);
-insert into measure (a, b, c, x) 
-  values (1, 2, 3, 438.03);
+insert into geometry (name) 
+  values ("Small 2x2"), ("Big 3x3");
+insert into points (geometry_id, point_nr, x, y) 
+  values (1, 1, 1, 2);
+  values (1, 2, 2, 2);
+  values (1, 3, 2, 1);
+  values (1, 4, 1, 1);
+  values (2, 1, 2, 6);
+  values (2, 2, 4, 6);
+  values (2, 3, 6, 6);
+  values (2, 4, 6, 4);
+  values (2, 5, 4, 4);
+  values (2, 6, 2, 4);
+  values (2, 7, 2, 2);
+  values (2, 8, 4, 2);
+  values (2, 9, 6, 2);
 insert into measure (a, b, c, x) 
   values (1, 2, 3, 1993.2);
 

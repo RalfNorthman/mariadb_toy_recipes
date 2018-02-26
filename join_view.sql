@@ -106,12 +106,9 @@ select * from measure;
 create sql security invoker view overview as
   select grating_nr, point_nr, x, y, wavelength, diffraction_order,
          deviation, polarisation, efficiency, name as geometry_name
-  from measure as m,
-       optical as o,
-       point as p,
-       geometry as g
-  where m.point_id = p.point_id and
-        m.optical_id = o.optical_id and
-        p.geometry_id = g.geometry_id;
+  from measure as m
+       inner join optical as o on m.optical_id = o.optical_id
+       inner join point as p on m.point_id = p.point_id
+       inner join geometry as g on p.geometry_id = g.geometry_id;
 
 select * from overview;

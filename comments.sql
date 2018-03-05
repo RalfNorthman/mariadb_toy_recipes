@@ -49,11 +49,21 @@ insert into things set
   weight_grams = 32.3;
 
 insert into comment_types set 
-  comment_type = 'Nonsensical';
+  comment_type = 'Bizarre';
 
 insert into comments set
   thing_nr = 101,
-  comment_type = 'Nonsensical',
+  comment_type = 'Bizarre',
   content = 'It\'s aura smells red';
-   
+
 select * from joined;
+   
+update comment_types set
+  comment_type = 'Nonsensical'
+  where comment_type = 'Bizarre';
+
+select * from joined;
+
+select comment_type, count(*) as number_of
+  from comments
+  group by comment_type;

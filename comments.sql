@@ -67,3 +67,9 @@ select * from joined;
 select comment_type, count(*) as number_of
   from comments
   group by comment_type;
+
+select comment_type, count(*) as number_of
+  from comments 
+    inner join things using (thing_nr)
+  where weight_grams > 1
+  group by comment_type;

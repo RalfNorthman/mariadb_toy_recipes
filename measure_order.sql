@@ -36,8 +36,11 @@ create procedure insert_weight (
   )
 begin
   
-  declare no_errors bool default 1;
-  declare continue handler for sqlexception set no_errors = 0;
+  declare exit handler for sqlexception
+  begin
+    rollback;
+    resignal;
+  end;
 
   start transaction;
 
@@ -50,11 +53,7 @@ begin
     circumstance_time_sek = p_circumstance_time_sek,
     weight_grams = p_weight_grams;
 
-  if no_errors then
-    commit;
-  else
-    rollback;
-  end if;
+  commit;
 
 end;//
 delimiter ;

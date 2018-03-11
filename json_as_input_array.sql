@@ -30,15 +30,9 @@ create procedure insert_measure(
     in in_efficiency_A decimal(5,3) unsigned, 
     in in_efficiency_B decimal(5,3) unsigned 
   )
-begin
-  
-  declare exit handler for sqlexception
-  begin
-    rollback;
-    resignal;
-  end;
+sql security invoker
 
-  start transaction;
+begin
 
   update measure set is_latest = 0
   where object_id = in_object_id and
@@ -50,23 +44,8 @@ begin
     efficiency_A = in_efficiency_A,
     efficiency_B = in_efficiency_B;
 
-  commit;
-
 end;//
 delimiter ;
-
-
-call insert_measure(10, 34, 77.3, null);
-call insert_measure(10, 34, 65.7, null);
-call insert_measure(10, 35, 64.9, null);
-call insert_measure(11, 85, null, 87.7);
-call insert_measure(11, 86, null, 86.8);
-call insert_measure(11, 87, null, 87.3);
-
-select efficiency_A, efficiency_B, is_latest, creation 
-  from measure;
-select object_id, position_id, efficiency_A, efficiency_B, is_latest 
-  from measure;
 
 
 
@@ -83,35 +62,44 @@ begin
   declare effB_left json default in_effB_array;
   declare effA, effB decimal(5,3) unsigned;
   declare pos_id bigint unsigned default in_position_id;
-  declare array_length smallint unsigned default json_length(in_effA_array);
-  declare _first char(4) default '$[0]';
-  
+  declare A_length smallint unsigned default json_length(in_effA_array);
+  declare B_length smallint unsigned default json_length(in_effB_array);
+  declare array_length smallint unsigned 
+    default coalesce(A_length, B_length);
+  declare A_is_null bool default in_effA_array is null;
+  declare B_is_null bool default in_effB_array is null;
+
   declare exit handler for sqlexception
   begin
     rollback;
     resignal;
   end;
-
-  if json_length(in_effA_array) <> json_length(in_effB_array) then
+  
+  
+  if A_is_null and B_is_null then
     signal sqlstate '45000' set
-    mysql_errno = 45000,
-    message_text = 'Arrays have mismatched lengths.'
+    message_text = 'Both arrays are null.';
+  end if;
+
+  if A_length <> B_length and not (A_is_null or B_is_null) then
+    signal sqlstate '45000' set
+    message_text = 'Arrays have mismatched lengths.';
   end if;
 
 
   start transaction;
 
-  while @array_length > 0 do
+  while array_length > 0 do
 
-    set @effA = json_extract(@effA_left, '$[0]'),
-        @effB = json_extract(@effB_left, '$[0]'),
-        @effA_left = json_remove(@effA_left, '$[0]'),
-        @effB_left = json_remove(@effB_left, '$[0]');
+    set effA = json_extract(effA_left, '$[0]'),
+        effB = json_extract(effB_left, '$[0]'),
+        effA_left = json_remove(effA_left, '$[0]'),
+        effB_left = json_remove(effB_left, '$[0]');
 
-    call insert_measure(in_object_id, @pos_id, @effA, @effB);
+    call insert_measure(in_object_id, pos_id, effA, effB);
     
-    set @pos_id = @pos_id + 1,
-        @array_length = @array_length - 1;
+    set pos_id = pos_id + 1,
+        array_length = array_length - 1;
 
   end while; 
 
@@ -121,8 +109,8 @@ end;//
 delimiter ;
 
 
-call array_insert(60, 101, '[77.3, 65.7, 74.2]', '[null, null, null]');
-call array_insert(60, 103, '[47.3, 45.7, 44.2]', '[null, null, null]');
+call array_insert(60, 101, json_array(77.3, 65.7, 74.2), null);
+call array_insert(60, 103, json_array(47.3, 45.7, 44.2), null);
 
 select efficiency_A, efficiency_B, is_latest, creation 
   from measure;
